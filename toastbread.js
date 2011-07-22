@@ -10,13 +10,14 @@
 		onSetVolumeCallbacks: [],
 	
 		init: function() {	
+			var that = this;
 			console.log('Toastbread loaded');
 			this.Queue.init();
 			
 			window.GS.player.tb_setVolume = window.GS.player.setVolume;
 			window.GS.player.setVolume = function(volume) {
-				if (this.onSetVolumeCallbacks.length) {
-					_.each(this.onSetVolumeCallbacks, function (callback) {
+				if (that.onSetVolumeCallbacks.length) {
+					_.each(that.onSetVolumeCallbacks, function (callback) {
 						callback.call(callback, volume);
 					});
 				}
@@ -70,7 +71,7 @@
 			currentPosition: 0,
 			
 			init: function() {
-				var self = this;
+				var that = this;
 				
 				window.GS.player.tb_addSongsToQueueAt = window.GS.player.addSongsToQueueAt;
 				window.GS.player.addSongsToQueueAt = function(songs, index, playOnAdd, h) {
