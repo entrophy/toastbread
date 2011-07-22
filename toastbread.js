@@ -3,9 +3,9 @@
 		SHUFFLE_ON: true, 
 		SHUFFLE_OFF: false,
 		
-		SHUFFLE_ONE: 'tb_shuffle_one', 
-		SHUFFLE_ALL: 'tb_shuffle_all', 
-		SHUFFLE_OFF: 'tb_shuffle_off',
+		REPEAT_ONE: 'tb_repeat_one', 
+		REPEAT_ALL: 'tb_repeat_all', 
+		REPEAT_OFF: 'tb_repeat_off',
 	
 		init: function() {
 			
