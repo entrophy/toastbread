@@ -6,10 +6,22 @@
 		REPEAT_ONE: 'tb_repeat_one', 
 		REPEAT_ALL: 'tb_repeat_all', 
 		REPEAT_OFF: 'tb_repeat_off',
+		
+		onSetVolumeCallbacks: [],
 	
 		init: function() {	
 			console.log('Toastbread loaded');
 			this.Queue.init();
+			
+			window.GS.player.tb_setVolume = window.GS.player.setVolume;
+			window.GS.player.setVolume = function(volume) {
+				if (this.onSetVolumeCallbacks.length) {
+					_.each(this.onSetVolumeCallbacks, function (callback) {
+						callback.call(callback, volume);
+					});
+				}
+				return window.GS.player.tb_setVolume(volume);
+			}
 		},
 		
 		play: function() {
@@ -40,10 +52,13 @@
 		},
 		
 		setVolume: function(volume) {
-		
+			window.GS.player.tb_setVolume(volume);
+		},
+		onSetVolume: function(callback) {
+			this.onSetVolumeCallbacks.push(callback);
 		},
 		getVolume: function() {
-		
+			return window.GS.player.getVolume();
 		},
 		
 		Queue: {
@@ -67,6 +82,7 @@
 
 					result = window.GS.player.tb_addSongsToQueueAt(songs, index, playOnAdd, h);
 					console.log(window.GS.player.queue);
+					console.log(window.GS.player.getCurrentQueue());
 					return result;
 				}
 			},
