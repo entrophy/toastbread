@@ -26,7 +26,7 @@
 		
 		},
 		
-		setVolume: function(volumn) {
+		setVolume: function(volume) {
 		
 		},
 		getVolume: function() {
