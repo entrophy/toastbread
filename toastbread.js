@@ -17,7 +17,7 @@
 			window.GS.player.tb_setVolume = window.GS.player.setVolume;
 			window.GS.player.setVolume = function(volume) {
 				if (that.onSetVolumeCallbacks.length) {
-					_.each(that.onSetVolumeCallbacks, function (callback) {
+					_.forEach(that.onSetVolumeCallbacks, function (callback) {
 						callback.call(callback, volume);
 					});
 				}
