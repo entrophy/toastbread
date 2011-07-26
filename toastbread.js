@@ -10,44 +10,45 @@
 		onSetVolumeCallbacks: [],
 		onSetShuffleCallbacks: [],
 		onSetRepeatCallbacks: [],
+		
+		eventCallbacks: {
+			"setVolume": [],
+			"setShuffle": [],
+			"setRepeat": []
+		},
 	
+		hijack: function (namespace, methods) {
+			var that = this;
+			_.forEach(methods, function (method) {
+				window.GS[namespace]["tb_"+method.name] = window.GS[namespace][method.name];
+				
+				window.GS[namespace][method.name] = function() {
+					var args = Array.prototype.slice.call(arguments);
+					var processedArgs = args;
+					var callbackName = method.callbacks || method.name;
+					
+					if (that.eventCallbacks[callbackName].length) {
+						_.forEach(that.eventCallbacks[callbackName], function (callback) {
+							callback.apply(callback, processedArgs);
+						});
+					}
+					
+					return window.GS[namespace]["tb_"+method.name].apply(window.GS[namespace]["tb_"+method.name], args);
+				}
+			});
+		},
+
 		init: function() {	
 			var that = this;
 			console.log('Toastbread loaded');
 
 			
 			this.Queue.init();
-			
-			window.GS.player.tb_setVolume = window.GS.player.setVolume;
-			window.GS.player.setVolume = function(volume) {
-				if (that.onSetVolumeCallbacks.length) {
-					_.forEach(that.onSetVolumeCallbacks, function (callback) {
-						callback.call(callback, volume);
-					});
-				}
-				return window.GS.player.tb_setVolume(volume);
-			}
-
-			window.GS.player.tb_setShuffle = window.GS.player.setShuffle;
-			window.GS.player.setShuffle = function(shuffle) {
-				if (that.onSetShuffleCallbacks.length) {
-					_.forEach(that.onSetShuffleCallbacks, function (callback) {
-						callback.call(callback, shuffle);
-					});
-				}
-				return window.GS.player.tb_setShuffle(shuffle);
-			}
-
-			window.GS.player.tb_setRepeat = window.GS.player.setRepeat;
-			window.GS.player.setRepeat = function(repeat) {
-				if (that.onSetRepeatCallbacks.length) {
-					_.forEach(that.onSetRepeatCallbacks, function (callback) {
-						callback.call(callback, repeat);
-					});
-				}
-				
-				return window.GS.player.tb_setRepeat(repeat);
-			}
+			this.hijack("player", [
+				{"name": "setVolume", "callbacks": "setVolume"},
+				{"name": "setShuffle", "callbacks": "setShuffle"},
+				{"name": "setRepeat", "callbacks": "setRepeat"}
+			]);
 		},
 		
 		play: function() {
@@ -67,7 +68,7 @@
 			window.GS.player.tb_setShuffle(shuffle);
 		},
 		onSetShuffle: function(callback) {
-			this.onSetShuffleCallbacks.push(callback);
+			this.eventCallbacks["setShuffle"].push(callback);
 		},
 		getShuffle: function() {
 			return window.GS.player.getShuffle();
@@ -77,7 +78,7 @@
 			window.GS.player.tb_setRepeat(repeat);
 		},
 		onSetRepeat: function(callback) {
-			this.onSetRepeatCallbacks.push(callback);
+			this.eventCallbacks["setRepeat"].push(callback);
 		},
 		getRepeat: function() {
 			return window.GS.player.getRepeat();
@@ -87,7 +88,7 @@
 			window.GS.player.tb_setVolume(volume);
 		},
 		onSetVolume: function(callback) {
-			this.onSetVolumeCallbacks.push(callback);
+			this.eventCallbacks["setVolume"].push(callback);
 		},
 		getVolume: function() {
 			return window.GS.player.getVolume();
