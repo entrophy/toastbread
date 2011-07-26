@@ -37,11 +37,9 @@
 				}
 			});
 		},
-
 		init: function() {	
 			var that = this;
 			console.log('Toastbread loaded');
-
 			
 			this.Queue.init();
 			this.hijack("player", [
@@ -49,6 +47,10 @@
 				{"name": "setShuffle", "callbacks": "setShuffle"},
 				{"name": "setRepeat", "callbacks": "setRepeat"}
 			]);
+		},
+		
+		addEventListener: function(event, callback) {
+			this.eventCallbacks[event].push(callback);
 		},
 		
 		play: function() {
