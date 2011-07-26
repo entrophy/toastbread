@@ -45,7 +45,6 @@
 						callback.call(callback, repeat);
 					});
 				}
-				
 				return window.GS.player.tb_setRepeat(repeat);
 			}
 		},
