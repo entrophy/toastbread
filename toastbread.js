@@ -25,7 +25,8 @@
 			"next": [],
 			"previous": [],
 			
-			"Queue_addSongs": []
+			"Queue_addSongs": [],
+			"Queue_clear": []
 		},
 	
 		hijack: function (namespace, methods) {
@@ -155,6 +156,7 @@
 				this.parent = parent;
 				
 				this.parent.hijack("player", [
+					{"name": "clearQueue", "callbacks": "Queue_clear"},
 					{"name": "addSongsToQueueAt", "callbacks": "Queue_addSongs", "before": function (songs, index, playOnAdd, h) {
 						var position;
 						if (index == -3) {
@@ -191,6 +193,9 @@
 				this.parent.eventCallbacks["queue_"+event].push(callback);
 			},
 			
+			clear: function() {
+				this.parent.playerNS().tb_clearQueue();
+			},
 			addSongs: function(songs, play, position) {
 				if (position == null) {
 					position = this.POSITION_LAST;
