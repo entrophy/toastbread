@@ -14,18 +14,32 @@
 		eventCallbacks: {
 			"setVolume": [],
 			"setShuffle": [],
-			"setRepeat": []
+			"setRepeat": [],
+			
+			"queue_addSong": []
 		},
 	
 		hijack: function (namespace, methods) {
 			var that = this;
+			
+			if (namespace == "player") {
+				namespace = this.playerNS();
+			} else {
+				namespace = window.GS[namespace];
+			}
+			
+			console.log(namespace);
 			_.forEach(methods, function (method) {
-				window.GS[namespace]["tb_"+method.name] = window.GS[namespace][method.name];
+				namespace["tb_"+method.name] = namespace[method.name];
 				
-				window.GS[namespace][method.name] = function() {
+				namespace[method.name] = function() {
 					var args = Array.prototype.slice.call(arguments);
 					var processedArgs = args;
 					var callbackName = method.callbacks || method.name;
+					
+					if (method.before) {
+						processedArgs = method.before.apply(method.before, processedArgs);
+					}
 					
 					if (that.eventCallbacks[callbackName].length) {
 						_.forEach(that.eventCallbacks[callbackName], function (callback) {
@@ -33,20 +47,23 @@
 						});
 					}
 					
-					return window.GS[namespace]["tb_"+method.name].apply(window.GS[namespace]["tb_"+method.name], args);
+					return namespace["tb_"+method.name].apply(namespace["tb_"+method.name], args);
 				}
 			});
+		},
+		playerNS: function() {
+			return window.GS.player.player;
 		},
 		init: function() {	
 			var that = this;
 			console.log('Toastbread loaded');
 			
-			this.Queue.init();
 			this.hijack("player", [
 				{"name": "setVolume", "callbacks": "setVolume"},
 				{"name": "setShuffle", "callbacks": "setShuffle"},
 				{"name": "setRepeat", "callbacks": "setRepeat"}
 			]);
+			this.Queue.init(this);
 		},
 		
 		addEventListener: function(event, callback) {
@@ -67,67 +84,91 @@
 		},
 
 		setShuffle: function(shuffle) {
-			window.GS.player.tb_setShuffle(shuffle);
+			this.playerNS().tb_setShuffle(shuffle);
 		},
 		onSetShuffle: function(callback) {
 			this.eventCallbacks["setShuffle"].push(callback);
 		},
 		getShuffle: function() {
-			return window.GS.player.getShuffle();
+			return this.playerNS().getShuffle();
 		},
 		
 		setRepeat: function(repeat) {
-			window.GS.player.tb_setRepeat(repeat);
+			this.playerNS().tb_setRepeat(repeat);
 		},
 		onSetRepeat: function(callback) {
 			this.eventCallbacks["setRepeat"].push(callback);
 		},
 		getRepeat: function() {
-			return window.GS.player.getRepeat();
+			return this.playerNS().getRepeat();
 		},
 		
 		setVolume: function(volume) {
-			window.GS.player.tb_setVolume(volume);
+			this.playerNS().tb_setVolume(volume);
 		},
 		onSetVolume: function(callback) {
 			this.eventCallbacks["setVolume"].push(callback);
 		},
 		getVolume: function() {
-			return window.GS.player.getVolume();
+			return this.playerNS().getVolume();
 		},
 		
 		Queue: {
 			POSITION_FIRST: 'tb_queue_position_first',
+			POSITION_NEXT: 'tb_queue_position_next',
 			POSITION_LAST: 'tb_queue_position_last', 
 			POSITION_RANDOM: 'tb_queue_position_random',
 			
+			parent: {},
 			onAddSongCallbacks: [],
 			currentPosition: 0,
 			
-			init: function() {
+			init: function(parent) {
 				var that = this;
+				this.parent = parent;
 				
-				window.GS.player.tb_addSongsToQueueAt = window.GS.player.addSongsToQueueAt;
-				window.GS.player.addSongsToQueueAt = function(songs, index, playOnAdd, h) {
-					var result;
-					
-					console.log(songs);
-					console.log(index);
-					console.log(playOnAdd);
-
-					result = window.GS.player.tb_addSongsToQueueAt(songs, index, playOnAdd, h);
-					console.log(window.GS.player.queue);
-					console.log(window.GS.player.getCurrentQueue());
-					return result;
-				}
+				/*this.parent.hijack("player", [
+					{"name": "addSongsToQueueAt", "callbacks": "queue_addSong", "before": function (songs, index, playOnAdd, h) {
+						console.log(songs);
+						var position;
+						if (index == -3) {
+							position = that.POSITION_LAST;
+							index = GS.player.queue.songs.length;
+						} else if (index == -2) {
+							position = that.POSITION_NEXT;
+							index = GS.player.queue.activeSong.index + 1;
+						} else if (index == -1) {
+							if (playOnAdd) {
+								if (GS.player.queue.activeSong) {
+									index = GS.player.queue.activeSong.index + 1;
+									position = index;
+								} else {
+									index = 0;
+									position = that.POSITION_FIRST;
+								}
+							} else {
+								position = that.POSITION_LAST;
+								index = GS.player.queue.songs.length;
+							}
+						} else if (index == 0) {
+							position = that.POSITION_FIRST;
+						} else {
+							position = index;
+						}
+						
+						return [songs, playOnAdd, position, index];
+					}}
+				]);*/
 			},
+
+			addEventListener: function(event, callback) {
+				this.parent.eventCallbacks["queue_"+event].push(callback);
+			},
+			
 			addSong: function(song_id, position) {
 				if (position == null) {
 					position = this.POSITION_LAST;
 				}
-			},
-			onAddSong: function(callback) {
-				this.onAddSongCallbacks.push(callback);
 			},
 			
 			getCurrentPosition: function() {
@@ -143,5 +184,3 @@
 	window.Toastbread = Toastbread;
 	Toastbread.init();
 })();
-
-// javascript:void((a = (b=document).createElement('script')).src='http://localhost:8888/toastbread/toastbread.js',b.body.appendChild(a))
