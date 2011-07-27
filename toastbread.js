@@ -219,10 +219,6 @@
 			},
 			
 			getCurrentPosition: function() {
-			},
-			
-			clear: function() {
-			
 			}
 		}
 	}
