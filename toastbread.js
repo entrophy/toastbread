@@ -16,7 +16,7 @@
 			"setShuffle": [],
 			"setRepeat": [],
 			
-			"queue_addSong": []
+			"queue_addSongs": []
 		},
 	
 		hijack: function (namespace, methods) {
@@ -28,7 +28,6 @@
 				namespace = window.GS[namespace];
 			}
 			
-			console.log(namespace);
 			_.forEach(methods, function (method) {
 				namespace["tb_"+method.name] = namespace[method.name];
 				
@@ -41,7 +40,7 @@
 						processedArgs = method.before.apply(method.before, processedArgs);
 					}
 					
-					if (that.eventCallbacks[callbackName].length) {
+					if (that.eventCallbacks[callbackName] && that.eventCallbacks[callbackName].length) {
 						_.forEach(that.eventCallbacks[callbackName], function (callback) {
 							callback.apply(callback, processedArgs);
 						});
@@ -120,16 +119,13 @@
 			POSITION_RANDOM: 'tb_queue_position_random',
 			
 			parent: {},
-			onAddSongCallbacks: [],
-			currentPosition: 0,
 			
 			init: function(parent) {
 				var that = this;
 				this.parent = parent;
 				
-				/*this.parent.hijack("player", [
-					{"name": "addSongsToQueueAt", "callbacks": "queue_addSong", "before": function (songs, index, playOnAdd, h) {
-						console.log(songs);
+				this.parent.hijack("player", [
+					{"name": "addSongsToQueueAt", "callbacks": "queue_addSongs", "before": function (songs, index, playOnAdd, h) {
 						var position;
 						if (index == -3) {
 							position = that.POSITION_LAST;
@@ -158,21 +154,36 @@
 						
 						return [songs, playOnAdd, position, index];
 					}}
-				]);*/
+				]);
 			},
 
 			addEventListener: function(event, callback) {
 				this.parent.eventCallbacks["queue_"+event].push(callback);
 			},
 			
-			addSong: function(song_id, position) {
+			addSongs: function(songs, play, position) {
 				if (position == null) {
 					position = this.POSITION_LAST;
 				}
+				
+				if (isNaN(position)) {
+					switch (position) {
+						case this.POSITION_FIRST:
+							position = 0;
+							break;
+						case this.POSITION_NEXT:
+							position = GS.player.queue.activeSong.index + 1;
+							break;
+						case this.POSITION_LAST:
+							position = GS.player.queue.songs.length;
+							break;
+					}
+				}
+				
+				this.parent.playerNS().tb_addSongsToQueueAt(songs, position, play, null, null);
 			},
 			
 			getCurrentPosition: function() {
-				return this.currentPosition;
 			},
 			
 			clear: function() {
