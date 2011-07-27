@@ -2,19 +2,21 @@
 	var Toastbread = {
 		SHUFFLE_ON: true, 
 		SHUFFLE_OFF: false,
+
+		MUTE_ON: true,
+		MUTE_OFF: false,
 		
 		REPEAT_ONE: 2, 
 		REPEAT_ALL: 1, 
 		REPEAT_OFF: 0,
 		
-		onSetVolumeCallbacks: [],
-		onSetShuffleCallbacks: [],
-		onSetRepeatCallbacks: [],
-		
 		eventCallbacks: {
 			"setVolume": [],
+			"setIsMuted": [],
 			"setShuffle": [],
 			"setRepeat": [],
+			"next": [],
+			"previous": [],
 			
 			"queue_addSongs": []
 		},
@@ -56,11 +58,14 @@
 		init: function() {	
 			var that = this;
 			console.log('Toastbread loaded');
-			
+
 			this.hijack("player", [
 				{"name": "setVolume", "callbacks": "setVolume"},
+				{"name": "setIsMuted", "callbacks": "setIsMuted"},
 				{"name": "setShuffle", "callbacks": "setShuffle"},
-				{"name": "setRepeat", "callbacks": "setRepeat"}
+				{"name": "setRepeat", "callbacks": "setRepeat"},
+				{"name": "nextSong", "callbacks": "next"},
+				{"name": "previousSong", "callbacks": "previous"}
 			]);
 			this.Queue.init(this);
 		},
@@ -75,11 +80,19 @@
 		pause: function() {
 		
 		},
+		
 		next: function() {
-		
+			this.playerNS().tb_nextSong();
 		},
-		previous: function() {
+		onNext: function(callback) {
+			this.eventCallbacks["next"].push(callback);
+		},
 		
+		previous: function() {
+			this.playerNS().tb_previousSong();
+		},
+		onPrevious: function(callback) {
+			this.eventCallbacks["previous"].push(callback);
 		},
 
 		setShuffle: function(shuffle) {
@@ -110,6 +123,16 @@
 		},
 		getVolume: function() {
 			return this.playerNS().getVolume();
+		},
+
+		setIsMuted: function(muted) {
+			this.playerNS().tb_setIsMuted(muted);
+		},
+		onSetIsMuted: function(callback) {
+			this.eventCallbacks["setIsMuted"].push(callback);
+		},
+		getIsMuted: function() {
+			return this.playerNS().getIsMuted();
 		},
 		
 		Queue: {
