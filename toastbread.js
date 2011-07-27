@@ -1,4 +1,11 @@
 (function () {
+	if (!window.console) {
+		console = {
+			"log": function() {},
+			"error": function() {}
+		}
+	}
+
 	var Toastbread = {
 		SHUFFLE_ON: true, 
 		SHUFFLE_OFF: false,
@@ -18,7 +25,7 @@
 			"next": [],
 			"previous": [],
 			
-			"queue_addSongs": []
+			"Queue_addSongs": []
 		},
 	
 		hijack: function (namespace, methods) {
@@ -148,7 +155,7 @@
 				this.parent = parent;
 				
 				this.parent.hijack("player", [
-					{"name": "addSongsToQueueAt", "callbacks": "queue_addSongs", "before": function (songs, index, playOnAdd, h) {
+					{"name": "addSongsToQueueAt", "callbacks": "Queue_addSongs", "before": function (songs, index, playOnAdd, h) {
 						var position;
 						if (index == -3) {
 							position = that.POSITION_LAST;
