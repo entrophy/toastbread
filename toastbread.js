@@ -7,10 +7,6 @@
 		REPEAT_ALL: 1, 
 		REPEAT_OFF: 0,
 		
-		onSetVolumeCallbacks: [],
-		onSetShuffleCallbacks: [],
-		onSetRepeatCallbacks: [],
-		
 		eventCallbacks: {
 			"setVolume": [],
 			"setShuffle": [],
