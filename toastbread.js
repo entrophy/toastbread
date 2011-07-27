@@ -24,6 +24,8 @@
 			"setRepeat": [],
 			"next": [],
 			"previous": [],
+			"pause": [],
+			"play": [],
 			
 			"Queue_addSongs": [],
 			"Queue_clear": []
@@ -73,7 +75,10 @@
 				{"name": "setShuffle", "callbacks": "setShuffle"},
 				{"name": "setRepeat", "callbacks": "setRepeat"},
 				{"name": "nextSong", "callbacks": "next"},
-				{"name": "previousSong", "callbacks": "previous"}
+				{"name": "previousSong", "callbacks": "previous"},
+				{"name": "pauseSong", "callbacks": "pause"},
+				{"name": "playSong", "callbacks": "play"},
+				{"name": "resumeSong", "callbacks": "play"}
 			]);
 			this.Queue.init(this);
 		},
@@ -83,10 +88,23 @@
 		},
 		
 		play: function() {
-			//if (GS.player && GS.player.queue && GS.player.queue.activeSong)GS.player.isPaused?GS.player.resumeSong(): GS.player.playSong(GS.player.queue.activeSong.queueSongID)
+			if (window.GS.player.isPaused) {
+				this.playerNS().tb_resumeSong();
+			} else if (window.GS.player.isPlaying) {
+				this.playerNS().tb_pauseSong();
+			} else {
+				this.playerNS().tb_playSong();
+			}
 		},
-		pause: function() {
+		onPlay: function(callback) {
+			this.eventCallbacks["play"].push(callback);
+		},
 		
+		pause: function() {
+			this.playerNS().tb_pauseSong();
+		},
+		onPause: function(callback) {
+			this.eventCallbacks["pause"].push(callback);
 		},
 		
 		next: function() {
