@@ -87,13 +87,11 @@
 			this.eventCallbacks[event].push(callback);
 		},
 		
-		play: function() {
-			if (window.GS.player.isPaused) {
+		play: function(queueSongID) {
+			if (queueSongID) {
+				this.playerNS().tb_playSong(queueSongID);
+			} else if (window.GS.player.isPaused) {
 				this.playerNS().tb_resumeSong();
-			} else if (window.GS.player.isPlaying) {
-				this.playerNS().tb_pauseSong();
-			} else {
-				this.playerNS().tb_playSong();
 			}
 		},
 		onPlay: function(callback) {
