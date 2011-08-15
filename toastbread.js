@@ -24,11 +24,15 @@
 			"setRepeat": [],
 			"next": [],
 			"previous": [],
+			"setSeek": [],
 			"pause": [],
 			"play": [],
 			
 			"Queue_addSongs": [],
-			"Queue_clear": []
+			"Queue_clear": [],
+			"Queue_setActiveSong": [],
+			"Queue_removeSongs": [],
+			"Queue_moveSongs": []
 		},
 	
 		hijack: function (namespace, methods) {
@@ -65,6 +69,9 @@
 		playerNS: function() {
 			return window.GS.player.player;
 		},
+		queueNS: function() {
+			return window.GS.player.queue;
+		},
 		init: function() {	
 			var that = this;
 			console.log('Toastbread loaded');
@@ -76,11 +83,14 @@
 				{"name": "setRepeat", "callbacks": "setRepeat"},
 				{"name": "nextSong", "callbacks": "next"},
 				{"name": "previousSong", "callbacks": "previous"},
+				{"name": "seekTo", "callbacks": "setSeek"},
 				{"name": "pauseSong", "callbacks": "pause"},
 				{"name": "playSong", "callbacks": "play"},
 				{"name": "resumeSong", "callbacks": "play"}
 			]);
 			this.Queue.init(this);
+			this.Updater.init(this);
+			this.Notification.init(this);
 		},
 		
 		addEventListener: function(event, callback) {
@@ -90,40 +100,38 @@
 		play: function(queueSongID) {
 			if (queueSongID) {
 				this.playerNS().tb_playSong(queueSongID);
-			} else if (window.GS.player.isPaused) {
+			} else if (this.isPlaying()) {
+				this.playerNS().tb_pauseSong();
+			} else if (this.isPaused()) {
 				this.playerNS().tb_resumeSong();
 			}
 		},
-		onPlay: function(callback) {
-			this.eventCallbacks["play"].push(callback);
-		},
-		
 		pause: function() {
 			this.playerNS().tb_pauseSong();
 		},
-		onPause: function(callback) {
-			this.eventCallbacks["pause"].push(callback);
-		},
-		
 		next: function() {
 			this.playerNS().tb_nextSong();
 		},
-		onNext: function(callback) {
-			this.eventCallbacks["next"].push(callback);
-		},
-		
 		previous: function() {
 			this.playerNS().tb_previousSong();
 		},
-		onPrevious: function(callback) {
-			this.eventCallbacks["previous"].push(callback);
+
+		isPlaying: function() {
+			return window.GS.player.isPlaying;
+		},
+		isPaused: function() {
+			return window.GS.player.isPaused;
+		},
+		
+		setSeek: function(position) {
+			this.playerNS().tb_seekTo(position);
+		},
+		getSeek: function() {
+			return (this.playerNS().getPlaybackStatus() ? this.playerNS().getPlaybackStatus().position : null);
 		},
 
 		setShuffle: function(shuffle) {
 			this.playerNS().tb_setShuffle(shuffle);
-		},
-		onSetShuffle: function(callback) {
-			this.eventCallbacks["setShuffle"].push(callback);
 		},
 		getShuffle: function() {
 			return this.playerNS().getShuffle();
@@ -132,18 +140,12 @@
 		setRepeat: function(repeat) {
 			this.playerNS().tb_setRepeat(repeat);
 		},
-		onSetRepeat: function(callback) {
-			this.eventCallbacks["setRepeat"].push(callback);
-		},
 		getRepeat: function() {
-			return this.playerNS().getRepeat();
+			return window.GS.player.repeatMode;
 		},
 		
 		setVolume: function(volume) {
 			this.playerNS().tb_setVolume(volume);
-		},
-		onSetVolume: function(callback) {
-			this.eventCallbacks["setVolume"].push(callback);
 		},
 		getVolume: function() {
 			return this.playerNS().getVolume();
@@ -151,9 +153,6 @@
 
 		setIsMuted: function(muted) {
 			this.playerNS().tb_setIsMuted(muted);
-		},
-		onSetIsMuted: function(callback) {
-			this.eventCallbacks["setIsMuted"].push(callback);
 		},
 		getIsMuted: function() {
 			return this.playerNS().getIsMuted();
@@ -201,15 +200,18 @@
 						}
 						
 						return [songs, playOnAdd, position, index];
-					}}
+					}},
+					{"name": "setActiveSong", "callbacks": "Queue_setActiveSong"},
+					{"name": "removeSongs", "callbacks": "Queue_removeSongs"},
+					{"name": "moveSongsTo", "callbacks": "Queue_moveSongs"}
 				]);
 			},
 
 			addEventListener: function(event, callback) {
 				this.parent.eventCallbacks["queue_"+event].push(callback);
 			},
-			
 			clear: function() {
+				Toastbread.pause();
 				this.parent.playerNS().tb_clearQueue();
 			},
 			addSongs: function(songs, play, position) {
@@ -233,8 +235,55 @@
 				
 				this.parent.playerNS().tb_addSongsToQueueAt(songs, position, play, null, null);
 			},
-			
-			getCurrentPosition: function() {
+			getSongs: function() {
+				return this.parent.queueNS().songs;
+			},
+			removeSongs: function(queueSongIDs) {
+				this.parent.playerNS().tb_removeSongs(queueSongIDs);
+			},
+			moveSongs: function(songIDs, index) {
+				this.parent.playerNS().tb_moveSongsTo(songIDs, index);
+			},
+			setActiveSong: function(queueSongID) {
+				this.parent.playerNS().tb_setActiveSong(queueSongID);
+			},
+			getActiveSong: function() {
+				return window.GS.player.currentSong != undefined ? window.GS.player.currentSong.queueSongID : null;
+			}
+		},
+		Notification: {
+			parent: {},
+			init: function(parent) {
+				var that = this;
+				this.parent = parent;
+			},
+			publish: function(type, msg) {
+				$.publish('gs.notification', { 'type': type, 'message': msg });
+			},
+			error: function(msg) {
+				this.publish('error', msg);
+			},
+			info: function(msg) {
+				this.publish('info', msg);
+			}
+		},
+		Updater: {
+			parent: {},
+			init: function(parent) {
+				var that = this;
+				this.parent = parent;
+
+				window.GS.player._currentSong = window.GS.player.currentSong;
+				window.GS.player.__defineGetter__('currentSong', function() {
+					return window.GS.player._currentSong;
+				});
+				window.GS.player.__defineSetter__('currentSong', function(value) {
+					if (window.GS.player._currentSong && value && window.GS.player._currentSong.queueSongID != value.queueSongID) {
+						window.GS.player.player.playSong(value.queueSongID);
+					}
+					
+					return window.GS.player._currentSong = value;
+				});
 			}
 		}
 	}
